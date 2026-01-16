@@ -1,0 +1,6 @@
+If you want to use price IDs client-side, set:
+
+NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY=price_...
+NEXT_PUBLIC_STRIPE_PRICE_TEAM_MONTHLY=price_...
+
+Alternatively: keep them server-side only and fetch /api/billing/checkout with an enum plan key.
