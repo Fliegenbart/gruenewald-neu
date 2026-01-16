@@ -1,6 +1,8 @@
 import { prisma } from "@/server/db";
-import { SubscriptionTier, AssessmentType } from "@prisma/client";
 import { isPaidTier } from "@/server/subscription";
+
+type SubscriptionTier = "free" | "pro" | "team";
+type AssessmentType = "QUICK" | "FULL";
 
 class PaywallError extends Error {
   status: number;

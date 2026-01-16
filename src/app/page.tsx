@@ -22,18 +22,18 @@ export default function HomePage() {
         <div className="container">
           <p className="text-caption animate-fade-in">Compliance für Life Sciences</p>
           <h1 className="animate-slide-up" style={{ animationDelay: "0.1s", animationFillMode: "backwards" }}>
-            Audit-Ready in Minuten,<br />nicht Monaten.
+            Compliance-Lücken aufdecken,<br />sofort und kostenlos.
           </h1>
           <p className="text-large animate-slide-up" style={{ animationDelay: "0.2s", animationFillMode: "backwards" }}>
-            Wählen Sie zwischen Quick Audit (15 Fragen) für einen schnellen Überblick<br />
-            oder Full Audit (50 Fragen) für eine umfassende Analyse.
+            Starten Sie jetzt Ihren Quick Audit – ohne Anmeldung, ohne Kosten.<br />
+            In 5 Minuten wissen Sie, wo Handlungsbedarf besteht.
           </p>
           <div className="flex gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.3s", animationFillMode: "backwards" }}>
             <a href="#frameworks" className="btn btn-primary btn-lg">
-              Audit starten
+              Quick Audit starten
             </a>
-            <a href="/pricing" className="btn btn-secondary btn-lg">
-              Pricing ansehen
+            <a href="https://www.gruenewald-gmbh.de" target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-lg">
+              Beratung anfragen
             </a>
           </div>
         </div>
@@ -54,6 +54,49 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* How it works */}
+      <section className="section" style={{ background: "linear-gradient(135deg, rgba(0, 122, 255, 0.03) 0%, rgba(88, 86, 214, 0.03) 100%)" }}>
+        <div className="container">
+          <div className="text-center mb-8">
+            <p className="text-caption mb-4">So einfach geht's</p>
+            <h2>Quick Audit in 3 Schritten</h2>
+          </div>
+
+          <div className="grid grid-3" style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div className="card text-center">
+              <div style={{
+                fontSize: 24,
+                fontWeight: 700,
+                color: "var(--color-accent)",
+                marginBottom: "var(--space-3)"
+              }}>1</div>
+              <h4>Framework wählen</h4>
+              <p className="text-small">ISO 27001, ISO 13485, EU MDR oder EU GMP Annex 11</p>
+            </div>
+            <div className="card text-center">
+              <div style={{
+                fontSize: 24,
+                fontWeight: 700,
+                color: "var(--color-accent)",
+                marginBottom: "var(--space-3)"
+              }}>2</div>
+              <h4>15 Fragen beantworten</h4>
+              <p className="text-small">Ja/Nein – in unter 5 Minuten erledigt</p>
+            </div>
+            <div className="card text-center">
+              <div style={{
+                fontSize: 24,
+                fontWeight: 700,
+                color: "var(--color-accent)",
+                marginBottom: "var(--space-3)"
+              }}>3</div>
+              <h4>Ergebnis erhalten</h4>
+              <p className="text-small">Score, Lücken-Analyse und nächste Schritte</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Frameworks Section */}
       <section id="frameworks" className="section">
         <div className="container">
@@ -61,7 +104,7 @@ export default function HomePage() {
             <p className="text-caption mb-4">Compliance Frameworks</p>
             <h2>Wählen Sie Ihr Framework</h2>
             <p style={{ maxWidth: 540, margin: "var(--space-4) auto 0" }}>
-              Quick Audit für einen schnellen Check, Full Audit für die komplette Analyse.
+              Quick Audit: Kostenlos und ohne Anmeldung. Full Audit: Detaillierte Analyse für Pro-Nutzer.
             </p>
           </div>
 
@@ -87,7 +130,7 @@ export default function HomePage() {
                     style={{ flex: 1, minWidth: 120 }}
                   >
                     Quick Audit
-                    <span style={{ opacity: 0.7, marginLeft: 4, fontSize: 12 }}>15 Fragen</span>
+                    <span style={{ opacity: 0.7, marginLeft: 4, fontSize: 12 }}>Kostenlos</span>
                   </a>
                   <a
                     href={`/assessments/new?framework=${f.key}&type=FULL`}
@@ -118,12 +161,12 @@ export default function HomePage() {
               <div style={{ fontWeight: 600 }}>~5 Min</div>
               <div style={{ fontWeight: 600 }}>~20 Min</div>
 
-              <div style={{ textAlign: "left", fontSize: 14 }}>Detailtiefe</div>
-              <div style={{ fontWeight: 600 }}>Überblick</div>
-              <div style={{ fontWeight: 600 }}>Umfassend</div>
+              <div style={{ textAlign: "left", fontSize: 14 }}>Anmeldung</div>
+              <div style={{ color: "var(--color-success)", fontWeight: 600 }}>Nicht nötig</div>
+              <div style={{ fontWeight: 600 }}>Erforderlich</div>
 
               <div style={{ textAlign: "left", fontSize: 14 }}>Verfügbar</div>
-              <div style={{ color: "var(--color-success)", fontWeight: 600 }}>Free</div>
+              <div style={{ color: "var(--color-success)", fontWeight: 600 }}>Kostenlos</div>
               <div style={{ color: "var(--color-accent)", fontWeight: 600 }}>Pro</div>
             </div>
           </div>
@@ -135,39 +178,55 @@ export default function HomePage() {
         <div className="container">
           <div className="text-center mb-8">
             <p className="text-caption mb-4">Warum Grünewald?</p>
-            <h2>Compliance neu gedacht</h2>
+            <h2>Compliance-Experten seit 20+ Jahren</h2>
           </div>
 
           <div className="grid grid-3" style={{ maxWidth: 1000, margin: "0 auto" }}>
             <div className="card text-center">
               <div style={{ fontSize: 32, marginBottom: "var(--space-4)" }}>⚡</div>
-              <h4>Schnell</h4>
-              <p className="text-small">Quick Audit in unter 5 Minuten abschließen</p>
+              <h4>Sofort-Ergebnis</h4>
+              <p className="text-small">Quick Audit ohne Anmeldung – Ihr Score in 5 Minuten</p>
             </div>
             <div className="card text-center">
               <div style={{ fontSize: 32, marginBottom: "var(--space-4)" }}>🎯</div>
-              <h4>Präzise</h4>
-              <p className="text-small">Klare Gap-Analyse mit priorisierten Maßnahmen</p>
+              <h4>Klare Handlungsfelder</h4>
+              <p className="text-small">Wir zeigen Ihnen exakt, wo Compliance-Lücken bestehen</p>
             </div>
             <div className="card text-center">
-              <div style={{ fontSize: 32, marginBottom: "var(--space-4)" }}>📊</div>
-              <h4>Nachvollziehbar</h4>
-              <p className="text-small">Dashboard, Historie und PDF-Reports für Audits</p>
+              <div style={{ fontSize: 32, marginBottom: "var(--space-4)" }}>🤝</div>
+              <h4>Experten-Beratung</h4>
+              <p className="text-small">Unsere Consultants helfen bei der Umsetzung</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="section">
+      <section className="section" style={{
+        background: "linear-gradient(135deg, #FFE4B3 0%, #FFD699 100%)",
+        borderTop: "2px solid #F5A623",
+        borderBottom: "2px solid #F5A623"
+      }}>
         <div className="container text-center">
-          <h2>Bereit für Ihren ersten Audit?</h2>
-          <p style={{ maxWidth: 480, margin: "var(--space-4) auto var(--space-6)" }}>
-            Kostenlos starten mit Quick Audit. Keine Kreditkarte erforderlich.
+          <div style={{ fontSize: 48, marginBottom: "var(--space-4)" }}>🎯</div>
+          <h2 style={{ color: "#8B5A00" }}>Compliance-Lücken geschlossen?</h2>
+          <p style={{ maxWidth: 540, margin: "var(--space-4) auto var(--space-6)", color: "#8B5A00" }}>
+            Nach dem Quick Audit unterstützen unsere Experten Sie bei der Implementierung aller notwendigen Maßnahmen – von der Dokumentation bis zur Zertifizierung.
           </p>
-          <a href="/register" className="btn btn-primary btn-lg">
-            Jetzt registrieren
-          </a>
+          <div className="flex gap-4 justify-center" style={{ flexWrap: "wrap" }}>
+            <a
+              href="https://www.gruenewald-gmbh.de"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-lg"
+              style={{ background: "#8B5A00", color: "white" }}
+            >
+              Beratungsgespräch vereinbaren
+            </a>
+            <a href="#frameworks" className="btn btn-lg" style={{ background: "white", color: "#8B5A00" }}>
+              Erst Quick Audit starten
+            </a>
+          </div>
         </div>
       </section>
 
@@ -179,13 +238,16 @@ export default function HomePage() {
       }}>
         <div className="container">
           <div className="flex justify-between items-center" style={{ flexWrap: "wrap", gap: "var(--space-4)" }}>
-            <p className="text-small" style={{ color: "var(--color-text-tertiary)" }}>
-              © 2024 Grünewald Compliance OS
-            </p>
+            <div>
+              <p style={{ fontWeight: 600, marginBottom: "var(--space-2)" }}>Grünewald Compliance OS</p>
+              <p className="text-small" style={{ color: "var(--color-text-tertiary)" }}>
+                Ein Service der <a href="https://www.gruenewald-gmbh.de" target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-accent)" }}>Grünewald GmbH</a>
+              </p>
+            </div>
             <div className="flex gap-6">
-              <a href="#" className="text-small" style={{ color: "var(--color-text-tertiary)" }}>Impressum</a>
-              <a href="#" className="text-small" style={{ color: "var(--color-text-tertiary)" }}>Datenschutz</a>
-              <a href="#" className="text-small" style={{ color: "var(--color-text-tertiary)" }}>AGB</a>
+              <a href="https://www.gruenewald-gmbh.de/impressum" target="_blank" rel="noopener noreferrer" className="text-small" style={{ color: "var(--color-text-tertiary)" }}>Impressum</a>
+              <a href="https://www.gruenewald-gmbh.de/datenschutz" target="_blank" rel="noopener noreferrer" className="text-small" style={{ color: "var(--color-text-tertiary)" }}>Datenschutz</a>
+              <a href="https://www.gruenewald-gmbh.de" target="_blank" rel="noopener noreferrer" className="text-small" style={{ color: "var(--color-text-tertiary)" }}>gruenewald-gmbh.de</a>
             </div>
           </div>
         </div>

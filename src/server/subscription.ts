@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db";
-import { SubscriptionTier } from "@prisma/client";
+
+export type SubscriptionTier = "free" | "pro" | "team";
 
 /**
  * Source of truth: `user.tier` is derived from Stripe webhook updates.
@@ -10,9 +11,9 @@ export async function getUserTier(userId: string): Promise<SubscriptionTier> {
     where: { id: userId },
     select: { tier: true }
   });
-  return user?.tier ?? SubscriptionTier.free;
+  return (user?.tier as SubscriptionTier) ?? "free";
 }
 
 export function isPaidTier(tier: SubscriptionTier) {
-  return tier === SubscriptionTier.pro || tier === SubscriptionTier.team;
+  return tier === "pro" || tier === "team";
 }

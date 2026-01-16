@@ -1,5 +1,16 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth";
+import { prisma } from "@/server/db";
+import { getQuestions } from "@/domain/frameworks/banks";
+import type { FrameworkKey } from "@/domain/frameworks";
+
+type FullAnswer = { status: "none" | "partial" | "full"; comment?: string };
+type Answers = Record<string, boolean> | Record<string, FullAnswer>;
+
+function isFullAnswers(answers: Answers): answers is Record<string, FullAnswer> {
+  const firstValue = Object.values(answers)[0];
+  return firstValue !== undefined && typeof firstValue === "object" && "status" in firstValue;
+}
 
 export default async function AssessmentDetail({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -20,17 +31,33 @@ export default async function AssessmentDetail({ params }: { params: { id: strin
     );
   }
 
-  const res = await fetch(`${process.env.APP_URL}/api/assessments/${params.id}`, { cache: "no-store" });
-  const data = await res.json().catch(() => ({}));
+  const user = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+  if (!user) {
+    return (
+      <div className="auth-container">
+        <div className="card text-center" style={{ maxWidth: 400 }}>
+          <div style={{ fontSize: 48, marginBottom: "var(--space-4)" }}>❌</div>
+          <h2>Nicht gefunden</h2>
+          <p style={{ margin: "var(--space-4) 0 var(--space-6)" }}>Benutzer nicht gefunden.</p>
+          <a href="/dashboard" className="btn btn-primary">Zum Dashboard</a>
+        </div>
+      </div>
+    );
+  }
 
-  if (!res.ok) {
+  const assessment = await prisma.assessment.findUnique({
+    where: { id: params.id },
+    include: { framework: true }
+  });
+
+  if (!assessment || assessment.userId !== user.id) {
     return (
       <div className="auth-container">
         <div className="card text-center" style={{ maxWidth: 400 }}>
           <div style={{ fontSize: 48, marginBottom: "var(--space-4)" }}>❌</div>
           <h2>Nicht gefunden</h2>
           <p style={{ margin: "var(--space-4) 0 var(--space-6)" }}>
-            {data?.error ?? "Dieses Assessment existiert nicht oder Sie haben keinen Zugriff."}
+            Dieses Assessment existiert nicht oder Sie haben keinen Zugriff.
           </p>
           <a href="/dashboard" className="btn btn-primary">
             Zum Dashboard
@@ -40,23 +67,53 @@ export default async function AssessmentDetail({ params }: { params: { id: strin
     );
   }
 
-  const a = data.assessment;
-  const answers = a.answers as Record<string, boolean>;
-  const yesCount = Object.values(answers).filter(v => v === true).length;
-  const noCount = Object.values(answers).filter(v => v === false).length;
+  const answers = JSON.parse(assessment.answers) as Answers;
+  const isFullAudit = isFullAnswers(answers);
+  const questions = getQuestions(assessment.framework.key as FrameworkKey, assessment.type as "QUICK" | "FULL");
+
+  // Build question lookup map
+  const questionMap = new Map(questions.map(q => [q.id, q]));
+
+  // Calculate stats
+  let compliantCount = 0;
+  let partialCount = 0;
+  let gapsCount = 0;
+
+  if (isFullAudit) {
+    for (const [, answer] of Object.entries(answers)) {
+      if (answer.status === "full") compliantCount++;
+      else if (answer.status === "partial") partialCount++;
+      else gapsCount++;
+    }
+  } else {
+    for (const [, answer] of Object.entries(answers)) {
+      if (answer) compliantCount++;
+      else gapsCount++;
+    }
+  }
+
+  const totalQuestions = Object.keys(answers).length;
 
   return (
     <div className="section">
       <div className="container container-md">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
-          <p className="text-caption">Assessment Ergebnis</p>
-          <h1>{a.framework.name}</h1>
+          <div className="flex justify-center gap-2 mb-2">
+            <span className="text-caption">{assessment.framework.name}</span>
+            <span style={{ color: "var(--color-text-tertiary)" }}>•</span>
+            <span className="text-caption" style={{ color: "var(--color-accent)" }}>
+              {assessment.type === "FULL" ? "Full Audit" : "Quick Audit"}
+            </span>
+          </div>
+          <h1>Assessment Ergebnis</h1>
           <p style={{ color: "var(--color-text-tertiary)" }}>
-            Erstellt am {new Date(a.createdAt).toLocaleDateString("de-DE", {
+            Erstellt am {new Date(assessment.createdAt).toLocaleDateString("de-DE", {
               day: "2-digit",
               month: "long",
-              year: "numeric"
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
             })}
           </p>
         </div>
@@ -71,7 +128,7 @@ export default async function AssessmentDetail({ params }: { params: { id: strin
           padding: "var(--space-10)"
         }}>
           <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1 }}>
-            {a.score}%
+            {assessment.score}%
           </div>
           <div style={{ fontSize: 18, marginTop: "var(--space-2)", opacity: 0.9 }}>
             Compliance Score
@@ -79,18 +136,24 @@ export default async function AssessmentDetail({ params }: { params: { id: strin
         </div>
 
         {/* Stats */}
-        <div className="grid grid-3 mb-8 animate-slide-up" style={{ animationDelay: "0.2s", animationFillMode: "backwards" }}>
+        <div className={`grid ${isFullAudit ? "grid-4" : "grid-3"} mb-8 animate-slide-up`} style={{ animationDelay: "0.2s", animationFillMode: "backwards" }}>
           <div className="stat-card text-center">
-            <div className="stat-label">Erfüllt</div>
-            <div className="stat-value" style={{ color: "var(--color-success)" }}>{yesCount}</div>
+            <div className="stat-label">{isFullAudit ? "Vollständig" : "Erfüllt"}</div>
+            <div className="stat-value" style={{ color: "var(--color-success)" }}>{compliantCount}</div>
           </div>
+          {isFullAudit && (
+            <div className="stat-card text-center">
+              <div className="stat-label">Teilweise</div>
+              <div className="stat-value" style={{ color: "#FF9500" }}>{partialCount}</div>
+            </div>
+          )}
           <div className="stat-card text-center">
             <div className="stat-label">Gaps</div>
-            <div className="stat-value" style={{ color: "var(--color-warning)" }}>{a.gapsCount}</div>
+            <div className="stat-value" style={{ color: "var(--color-error)" }}>{gapsCount}</div>
           </div>
           <div className="stat-card text-center">
             <div className="stat-label">Gesamt</div>
-            <div className="stat-value">{yesCount + noCount}</div>
+            <div className="stat-value">{totalQuestions}</div>
           </div>
         </div>
 
@@ -100,11 +163,11 @@ export default async function AssessmentDetail({ params }: { params: { id: strin
             <div>
               <h4>PDF Export</h4>
               <p className="text-small" style={{ marginTop: "var(--space-1)" }}>
-                Laden Sie einen detaillierten Bericht herunter
+                Laden Sie einen detaillierten Compliance-Bericht herunter
               </p>
             </div>
             <a
-              href={`/api/assessments/${a.id}?pdf=1`}
+              href={`/api/assessments/${assessment.id}?pdf=1`}
               className="btn btn-primary"
             >
               PDF herunterladen
@@ -116,29 +179,95 @@ export default async function AssessmentDetail({ params }: { params: { id: strin
         <div className="animate-slide-up" style={{ animationDelay: "0.4s", animationFillMode: "backwards" }}>
           <h3 className="mb-4">Antworten im Detail</h3>
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-            {Object.entries(answers).map(([questionId, answer], i) => (
-              <div
-                key={questionId}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "var(--space-4) var(--space-5)",
-                  borderBottom: i < Object.entries(answers).length - 1 ? "1px solid var(--color-divider)" : "none",
-                  background: answer ? "var(--color-success-bg)" : "var(--color-error-bg)"
-                }}
-              >
-                <span style={{ fontSize: 14, color: "var(--color-text-secondary)" }}>
-                  {questionId}
-                </span>
-                <span style={{
-                  fontWeight: 600,
-                  color: answer ? "var(--color-success)" : "var(--color-error)"
-                }}>
-                  {answer ? "Ja" : "Nein"}
-                </span>
-              </div>
-            ))}
+            {Object.entries(answers).map(([questionId, answer], i) => {
+              const question = questionMap.get(questionId);
+              const questionText = question?.text || questionId;
+
+              let statusIcon: string;
+              let statusText: string;
+              let bgColor: string;
+              let textColor: string;
+              let comment: string | undefined;
+
+              if (isFullAudit) {
+                const fullAnswer = answer as FullAnswer;
+                comment = fullAnswer.comment;
+                if (fullAnswer.status === "full") {
+                  statusIcon = "✅";
+                  statusText = "Vollständig";
+                  bgColor = "rgba(52, 199, 89, 0.08)";
+                  textColor = "var(--color-success)";
+                } else if (fullAnswer.status === "partial") {
+                  statusIcon = "🔶";
+                  statusText = "Teilweise";
+                  bgColor = "rgba(255, 149, 0, 0.08)";
+                  textColor = "#FF9500";
+                } else {
+                  statusIcon = "❌";
+                  statusText = "Nicht umgesetzt";
+                  bgColor = "rgba(255, 59, 48, 0.08)";
+                  textColor = "var(--color-error)";
+                }
+              } else {
+                const boolAnswer = answer as boolean;
+                if (boolAnswer) {
+                  statusIcon = "✓";
+                  statusText = "Ja";
+                  bgColor = "rgba(52, 199, 89, 0.08)";
+                  textColor = "var(--color-success)";
+                } else {
+                  statusIcon = "✕";
+                  statusText = "Nein";
+                  bgColor = "rgba(255, 59, 48, 0.08)";
+                  textColor = "var(--color-error)";
+                }
+              }
+
+              return (
+                <div
+                  key={questionId}
+                  style={{
+                    padding: "var(--space-4) var(--space-5)",
+                    borderBottom: i < Object.entries(answers).length - 1 ? "1px solid var(--color-divider)" : "none",
+                    background: bgColor
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "var(--space-4)" }}>
+                    <div style={{ flex: 1 }}>
+                      <span className="text-caption" style={{ opacity: 0.5, marginBottom: "var(--space-1)", display: "block" }}>
+                        Frage {i + 1}
+                      </span>
+                      <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+                        {questionText}
+                      </div>
+                      {comment && (
+                        <div style={{
+                          marginTop: "var(--space-2)",
+                          padding: "var(--space-2) var(--space-3)",
+                          background: "var(--color-bg-secondary)",
+                          borderRadius: "var(--radius-sm)",
+                          fontSize: 13,
+                          color: "var(--color-text-secondary)"
+                        }}>
+                          💬 {comment}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--space-2)",
+                      fontWeight: 600,
+                      color: textColor,
+                      whiteSpace: "nowrap"
+                    }}>
+                      <span>{statusIcon}</span>
+                      <span>{statusText}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

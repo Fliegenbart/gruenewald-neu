@@ -5,6 +5,16 @@ import { prisma } from "@/server/db";
 import { AssessmentUpdateSchema } from "@/server/schemas";
 import { buildAssessmentPdf } from "@/server/pdf";
 import { isPaidTier, getUserTier } from "@/server/subscription";
+import { getQuestions } from "@/domain/frameworks/banks";
+import type { FrameworkKey } from "@/domain/frameworks";
+
+type FullAnswer = { status: "none" | "partial" | "full"; comment?: string };
+type Answers = Record<string, boolean> | Record<string, FullAnswer>;
+
+function isFullAnswers(answers: Answers): answers is Record<string, FullAnswer> {
+  const firstValue = Object.values(answers)[0];
+  return firstValue !== undefined && typeof firstValue === "object" && "status" in firstValue;
+}
 
 type Params = { params: { id: string } };
 
@@ -28,23 +38,78 @@ export async function GET(req: Request, { params }: Params) {
     const tier = await getUserTier(user.id);
     if (!isPaidTier(tier)) return NextResponse.json({ error: "PDF export requires Pro" }, { status: 402 });
 
+    // Parse answers
+    const answers = JSON.parse(assessment.answers) as Answers;
+    const isFullAudit = isFullAnswers(answers);
+
+    // Get questions for this framework
+    const frameworkQuestions = getQuestions(
+      assessment.framework.key as FrameworkKey,
+      assessment.type as "QUICK" | "FULL"
+    );
+    const questionMap = new Map(frameworkQuestions.map(q => [q.id, q]));
+
+    // Calculate stats
+    let compliantCount = 0;
+    let partialCount = 0;
+    let gapsCount = 0;
+
+    // Build question details for PDF
+    const questionDetails = Object.entries(answers).map(([questionId, answer]) => {
+      const question = questionMap.get(questionId);
+
+      if (isFullAudit) {
+        const fullAnswer = answer as FullAnswer;
+        if (fullAnswer.status === "full") compliantCount++;
+        else if (fullAnswer.status === "partial") partialCount++;
+        else gapsCount++;
+
+        return {
+          id: questionId,
+          text: question?.text || questionId,
+          status: fullAnswer.status as "full" | "partial" | "none",
+          comment: fullAnswer.comment
+        };
+      } else {
+        const boolAnswer = answer as boolean;
+        if (boolAnswer) compliantCount++;
+        else gapsCount++;
+
+        return {
+          id: questionId,
+          text: question?.text || questionId,
+          status: boolAnswer ? "yes" as const : "no" as const
+        };
+      }
+    });
+
     const pdfBytes = await buildAssessmentPdf({
       frameworkName: assessment.framework.name,
+      assessmentType: assessment.type,
       score: assessment.score,
-      gapsCount: assessment.gapsCount,
-      createdAtISO: assessment.createdAt.toISOString()
+      gapsCount,
+      compliantCount,
+      partialCount,
+      totalQuestions: Object.keys(answers).length,
+      createdAtISO: assessment.createdAt.toISOString(),
+      questions: questionDetails
     });
 
     return new NextResponse(pdfBytes, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="assessment-${assessment.id}.pdf"`
+        "Content-Disposition": `attachment; filename="assessment-${assessment.framework.key}-${assessment.id}.pdf"`
       }
     });
   }
 
-  return NextResponse.json({ assessment });
+  return NextResponse.json({
+    assessment: {
+      ...assessment,
+      answers: JSON.parse(assessment.answers)
+    }
+  });
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -66,11 +131,16 @@ export async function PUT(req: Request, { params }: Params) {
   const updated = await prisma.assessment.update({
     where: { id: params.id },
     data: {
-      answers: parsed.data.answers ?? assessment.answers
+      answers: parsed.data.answers ? JSON.stringify(parsed.data.answers) : assessment.answers
     }
   });
 
-  return NextResponse.json({ assessment: updated });
+  return NextResponse.json({
+    assessment: {
+      ...updated,
+      answers: JSON.parse(updated.answers)
+    }
+  });
 }
 
 export async function DELETE(_: Request, { params }: Params) {

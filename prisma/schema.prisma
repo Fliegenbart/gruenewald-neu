@@ -3,41 +3,25 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum SubscriptionTier {
-  free
-  pro
-  team
-}
-
-enum SubscriptionStatus {
-  active
-  trialing
-  past_due
-  canceled
-  incomplete
-  incomplete_expired
-  unpaid
-}
-
-enum AssessmentType {
-  QUICK
-  FULL
-}
+// Note: SQLite doesn't support enums, so we use String with validation in code
+// SubscriptionTier: "free" | "pro" | "team"
+// SubscriptionStatus: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | "incomplete_expired" | "unpaid"
+// AssessmentType: "QUICK" | "FULL"
 
 model User {
-  id                 String            @id @default(cuid())
-  email              String            @unique
+  id                 String    @id @default(cuid())
+  email              String    @unique
   name               String?
   company            String?
   passwordHash       String?
-  tier               SubscriptionTier  @default(free)
+  tier               String    @default("free")
   stripeCustomerId   String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   accounts           Account[]
   sessions           Session[]
@@ -58,15 +42,15 @@ model Framework {
 }
 
 model Assessment {
-  id          String         @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
   frameworkId String
-  type        AssessmentType @default(QUICK)
-  answers     Json
+  type        String   @default("QUICK")
+  answers     String   // JSON stored as string
   score       Int
   gapsCount   Int
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   framework   Framework @relation(fields: [frameworkId], references: [id])
@@ -77,17 +61,17 @@ model Assessment {
 }
 
 model Subscription {
-  id                    String              @id @default(cuid())
-  userId                String              @unique
-  stripeSubscriptionId  String?             @unique
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  stripeSubscriptionId  String?   @unique
   stripePriceId         String?
-  status                SubscriptionStatus  @default(canceled)
+  status                String    @default("canceled")
   currentPeriodEnd      DateTime?
-  cancelAtPeriodEnd     Boolean             @default(false)
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  cancelAtPeriodEnd     Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 //

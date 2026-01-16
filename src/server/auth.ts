@@ -6,7 +6,7 @@ import { prisma } from "@/server/db";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "database" },
+  session: { strategy: "jwt" },
   pages: {
     signIn: "/login"
   },
@@ -37,12 +37,18 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async session({ session, user }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
       // Attach userId + tier for client convenience (still enforce on server)
-      if (session.user) {
+      if (session.user && token.id) {
         // @ts-expect-error extend session
-        session.user.id = user.id;
-        const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { tier: true } });
+        session.user.id = token.id;
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string }, select: { tier: true } });
         // @ts-expect-error extend session
         session.user.tier = dbUser?.tier ?? "free";
       }

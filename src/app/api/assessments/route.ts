@@ -7,7 +7,6 @@ import { computeScore } from "@/domain/scoring/score";
 import { getQuestions } from "@/domain/frameworks/banks";
 import { assertCanCreateAssessment } from "@/server/paywall";
 import { getUserTier } from "@/server/subscription";
-import { AssessmentType } from "@prisma/client";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -27,7 +26,13 @@ export async function GET() {
     include: { framework: true }
   });
 
-  return NextResponse.json({ assessments });
+  // Parse answers JSON string back to object for each assessment
+  const parsedAssessments = assessments.map(a => ({
+    ...a,
+    answers: JSON.parse(a.answers)
+  }));
+
+  return NextResponse.json({ assessments: parsedAssessments });
 }
 
 export async function POST(req: Request) {
@@ -56,7 +61,7 @@ export async function POST(req: Request) {
       userId: user.id,
       frameworkId: framework.id,
       tier,
-      type: type as AssessmentType
+      type: type as "QUICK" | "FULL"
     });
   } catch (e: any) {
     const status = e?.status ?? 402;
@@ -72,12 +77,17 @@ export async function POST(req: Request) {
     data: {
       userId: user.id,
       frameworkId: framework.id,
-      type: type as AssessmentType,
-      answers,
+      type: type,
+      answers: JSON.stringify(answers), // Store as JSON string for SQLite
       score,
       gapsCount
     }
   });
 
-  return NextResponse.json({ assessment }, { status: 201 });
+  return NextResponse.json({
+    assessment: {
+      ...assessment,
+      answers // Return the original object, not the string
+    }
+  }, { status: 201 });
 }
