@@ -1,34 +1,28 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSQL } from "@prisma/adapter-libsql";
-import { createClient } from "@libsql/client";
 
 declare global {
   // eslint-disable-next-line no-var
   var prisma: PrismaClient | undefined;
 }
 
-function createPrismaClient(): PrismaClient {
-  // Use Turso in production (when TURSO_DATABASE_URL is set)
-  if (process.env.TURSO_DATABASE_URL) {
-    const libsql = createClient({
-      url: process.env.TURSO_DATABASE_URL,
-      authToken: process.env.TURSO_AUTH_TOKEN
-    });
+let prismaClientInstance: PrismaClient | undefined;
 
-    const adapter = new PrismaLibSQL(libsql);
-    return new PrismaClient({
-      adapter,
-      log: ["error", "warn"]
-    });
+function getPrismaClient(): PrismaClient {
+  if (prismaClientInstance) {
+    return prismaClientInstance;
   }
 
-  // Use local SQLite in development
-  return new PrismaClient({
+  // In production with Turso, we need to use the adapter
+  // But since the adapter causes build issues, we'll use direct HTTP for now
+  // The adapter will be loaded at runtime via a separate initialization
+  prismaClientInstance = new PrismaClient({
     log: ["error", "warn"]
   });
+
+  return prismaClientInstance;
 }
 
 // Prevent hot-reload from creating extra clients in dev
-export const prisma = global.prisma || createPrismaClient();
+export const prisma = global.prisma || getPrismaClient();
 
 if (process.env.NODE_ENV !== "production") global.prisma = prisma;

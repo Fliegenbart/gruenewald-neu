@@ -58,7 +58,7 @@ export default function HomePage() {
       <section className="section" style={{ background: "linear-gradient(135deg, rgba(0, 122, 255, 0.03) 0%, rgba(88, 86, 214, 0.03) 100%)" }}>
         <div className="container">
           <div className="text-center mb-8">
-            <p className="text-caption mb-4">So einfach geht's</p>
+            <p className="text-caption mb-4">So einfach geht&apos;s</p>
             <h2>Quick Audit in 3 Schritten</h2>
           </div>
 

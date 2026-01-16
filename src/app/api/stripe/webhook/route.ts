@@ -3,34 +3,37 @@ import { headers } from "next/headers";
 import { stripe } from "@/server/stripe";
 import { env } from "@/server/env";
 import { prisma } from "@/server/db";
-import { SubscriptionTier, SubscriptionStatus } from "@prisma/client";
+
+// SQLite doesn't support enums, so we use string types
+type SubscriptionStatus = "active" | "trialing" | "past_due" | "canceled" | "incomplete" | "incomplete_expired" | "unpaid";
+type SubscriptionTier = "free" | "pro" | "team";
 
 function mapStripeStatus(status: string): SubscriptionStatus {
   switch (status) {
     case "active":
-      return SubscriptionStatus.active;
+      return "active";
     case "trialing":
-      return SubscriptionStatus.trialing;
+      return "trialing";
     case "past_due":
-      return SubscriptionStatus.past_due;
+      return "past_due";
     case "canceled":
-      return SubscriptionStatus.canceled;
+      return "canceled";
     case "incomplete":
-      return SubscriptionStatus.incomplete;
+      return "incomplete";
     case "incomplete_expired":
-      return SubscriptionStatus.incomplete_expired;
+      return "incomplete_expired";
     case "unpaid":
-      return SubscriptionStatus.unpaid;
+      return "unpaid";
     default:
-      return SubscriptionStatus.canceled;
+      return "canceled";
   }
 }
 
 function tierFromPrice(priceId?: string | null): SubscriptionTier {
-  if (!priceId) return SubscriptionTier.free;
-  if (priceId === env.STRIPE_PRICE_TEAM_MONTHLY) return SubscriptionTier.team;
-  if (priceId === env.STRIPE_PRICE_PRO_MONTHLY) return SubscriptionTier.pro;
-  return SubscriptionTier.pro; // fallback: treat unknown paid as pro
+  if (!priceId) return "free";
+  if (priceId === env.STRIPE_PRICE_TEAM_MONTHLY) return "team";
+  if (priceId === env.STRIPE_PRICE_PRO_MONTHLY) return "pro";
+  return "pro"; // fallback: treat unknown paid as pro
 }
 
 export async function POST(req: Request) {
@@ -53,9 +56,9 @@ export async function POST(req: Request) {
     const status = mapStripeStatus(sub.status);
 
     const priceId = sub.items?.data?.[0]?.price?.id ?? null;
-    const tier = status === SubscriptionStatus.active || status === SubscriptionStatus.trialing
+    const tier = status === "active" || status === "trialing"
       ? tierFromPrice(priceId)
-      : SubscriptionTier.free;
+      : "free";
 
     const currentPeriodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null;
     const cancelAtPeriodEnd = Boolean(sub.cancel_at_period_end);

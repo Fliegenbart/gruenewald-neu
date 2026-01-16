@@ -95,7 +95,7 @@ export async function GET(req: Request, { params }: Params) {
       questions: questionDetails
     });
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
