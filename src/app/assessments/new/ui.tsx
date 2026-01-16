@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import type { Question } from "@/domain/frameworks/questions";
+import type { Question, AssessmentType } from "@/domain/frameworks/banks";
 import type { FrameworkKey } from "@/domain/frameworks";
 
-export default function NewAssessmentClient(props: { frameworkKey: FrameworkKey; questions: Question[] }) {
-  const { frameworkKey, questions } = props;
+interface Props {
+  frameworkKey: FrameworkKey;
+  assessmentType: AssessmentType;
+  questions: Question[];
+}
+
+export default function NewAssessmentClient({ frameworkKey, assessmentType, questions }: Props) {
   const [answers, setAnswers] = useState<Record<string, boolean>>(
     Object.fromEntries(questions.map((q) => [q.id, false]))
   );
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ type: "error" | "info"; text: string; code?: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   function set(id: string, v: boolean) {
@@ -26,14 +31,32 @@ export default function NewAssessmentClient(props: { frameworkKey: FrameworkKey;
     const res = await fetch("/api/assessments", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ frameworkKey, answers })
+      body: JSON.stringify({ frameworkKey, type: assessmentType, answers })
     });
 
     const data = await res.json().catch(() => ({}));
     setLoading(false);
 
     if (!res.ok) {
-      setMsg(data?.error ?? "Ein Fehler ist aufgetreten.");
+      // Handle specific error codes
+      if (data.code === "UPGRADE_REQUIRED") {
+        setMsg({
+          type: "info",
+          text: "Full Audit erfordert ein Pro-Abo.",
+          code: data.code
+        });
+      } else if (data.code === "QUICK_LIMIT_REACHED") {
+        setMsg({
+          type: "info",
+          text: "Sie haben bereits einen Quick Audit für dieses Framework durchgeführt. Upgraden Sie auf Pro für unbegrenzte Audits.",
+          code: data.code
+        });
+      } else {
+        setMsg({
+          type: "error",
+          text: data?.error ?? "Ein Fehler ist aufgetreten."
+        });
+      }
       return;
     }
     window.location.href = `/assessments/${data.assessment.id}`;
@@ -85,6 +108,11 @@ export default function NewAssessmentClient(props: { frameworkKey: FrameworkKey;
                 <div className="assessment-question-text">
                   {q.text}
                 </div>
+                {q.help && (
+                  <p className="text-small mt-4" style={{ color: "var(--color-text-tertiary)" }}>
+                    {q.help}
+                  </p>
+                )}
               </div>
               <div className="assessment-options" style={{ flexShrink: 0 }}>
                 <button
@@ -123,13 +151,30 @@ export default function NewAssessmentClient(props: { frameworkKey: FrameworkKey;
               Speichern...
             </span>
           ) : (
-            "Assessment abschließen"
+            "Audit abschließen"
           )}
         </button>
 
         {msg && (
-          <div className="alert alert-error" style={{ maxWidth: 400, margin: "var(--space-4) auto 0" }}>
-            {msg}
+          <div
+            className={`alert ${msg.type === "error" ? "alert-error" : ""}`}
+            style={{
+              maxWidth: 500,
+              margin: "var(--space-4) auto 0",
+              background: msg.code ? "var(--color-accent-subtle)" : undefined,
+              color: msg.code ? "var(--color-accent)" : undefined
+            }}
+          >
+            <p>{msg.text}</p>
+            {msg.code && (
+              <a
+                href="/pricing"
+                className="btn btn-primary"
+                style={{ marginTop: "var(--space-3)" }}
+              >
+                Auf Pro upgraden
+              </a>
+            )}
           </div>
         )}
 

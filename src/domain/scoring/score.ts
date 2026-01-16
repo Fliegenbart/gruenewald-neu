@@ -1,4 +1,4 @@
-import type { Question } from "@/domain/frameworks/questions";
+import type { Question } from "@/domain/frameworks/banks";
 
 /**
  * Placeholder scoring:

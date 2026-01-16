@@ -4,9 +4,10 @@ import { authOptions } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { AssessmentCreateSchema } from "@/server/schemas";
 import { computeScore } from "@/domain/scoring/score";
-import { QUESTIONS } from "@/domain/frameworks/questions";
+import { getQuestions } from "@/domain/frameworks/banks";
 import { assertCanCreateAssessment } from "@/server/paywall";
 import { getUserTier } from "@/server/subscription";
+import { AssessmentType } from "@prisma/client";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -42,26 +43,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid input", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const { frameworkKey, answers } = parsed.data;
+  const { frameworkKey, type, answers } = parsed.data;
 
   const framework = await prisma.framework.findUnique({ where: { key: frameworkKey } });
   if (!framework) return NextResponse.json({ error: "Unknown framework" }, { status: 404 });
 
   const tier = await getUserTier(user.id);
+
+  // Check paywall (tier requirements and limits)
   try {
-    await assertCanCreateAssessment({ userId: user.id, frameworkId: framework.id, tier });
+    await assertCanCreateAssessment({
+      userId: user.id,
+      frameworkId: framework.id,
+      tier,
+      type: type as AssessmentType
+    });
   } catch (e: any) {
-    const status = e?.status ?? 400;
-    return NextResponse.json({ error: e.message ?? "Paywall" }, { status });
+    const status = e?.status ?? 402;
+    const code = e?.code ?? "PAYWALL";
+    return NextResponse.json({ error: e.message ?? "Paywall", code }, { status });
   }
 
-  const questions = QUESTIONS[frameworkKey];
+  // Get questions for this framework and type
+  const questions = getQuestions(frameworkKey, type as "QUICK" | "FULL");
   const { score, gapsCount } = computeScore({ questions, answers });
 
   const assessment = await prisma.assessment.create({
     data: {
       userId: user.id,
       frameworkId: framework.id,
+      type: type as AssessmentType,
       answers,
       score,
       gapsCount

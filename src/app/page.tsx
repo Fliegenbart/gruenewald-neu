@@ -25,12 +25,12 @@ export default function HomePage() {
             Audit-Ready in Minuten,<br />nicht Monaten.
           </h1>
           <p className="text-large animate-slide-up" style={{ animationDelay: "0.2s", animationFillMode: "backwards" }}>
-            Starten Sie mit einem QuickCheck für Ihr Framework.
-            Identifizieren Sie Gaps und werden Sie compliant – einfach und effizient.
+            Wählen Sie zwischen Quick Audit (15 Fragen) für einen schnellen Überblick<br />
+            oder Full Audit (50 Fragen) für eine umfassende Analyse.
           </p>
           <div className="flex gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.3s", animationFillMode: "backwards" }}>
             <a href="#frameworks" className="btn btn-primary btn-lg">
-              QuickCheck starten
+              Audit starten
             </a>
             <a href="/pricing" className="btn btn-secondary btn-lg">
               Pricing ansehen
@@ -61,32 +61,71 @@ export default function HomePage() {
             <p className="text-caption mb-4">Compliance Frameworks</p>
             <h2>Wählen Sie Ihr Framework</h2>
             <p style={{ maxWidth: 540, margin: "var(--space-4) auto 0" }}>
-              Starten Sie einen QuickCheck und erhalten Sie sofort einen Überblick über Ihren Compliance-Status.
+              Quick Audit für einen schnellen Check, Full Audit für die komplette Analyse.
             </p>
           </div>
 
-          <div className="grid grid-2" style={{ maxWidth: 800, margin: "0 auto" }}>
+          <div className="grid grid-2" style={{ maxWidth: 900, margin: "0 auto" }}>
             {FRAMEWORKS.map((f, i) => (
-              <a
+              <div
                 key={f.key}
-                href={`/assessments/new?framework=${f.key}`}
-                style={{ textDecoration: "none" }}
+                className="card animate-slide-up"
+                style={{ animationDelay: `${0.1 + i * 0.1}s`, animationFillMode: "backwards" }}
               >
-                <div
-                  className="framework-card animate-slide-up"
-                  style={{ animationDelay: `${0.1 + i * 0.1}s`, animationFillMode: "backwards" }}
-                >
-                  <div className="framework-icon">
-                    {frameworkIcons[f.key] || "📋"}
-                  </div>
-                  <h3>{f.short}</h3>
-                  <p>{frameworkDescriptions[f.key] || f.name}</p>
-                  <span className="framework-arrow">
-                    QuickCheck starten →
-                  </span>
+                <div className="framework-icon" style={{ marginBottom: "var(--space-4)" }}>
+                  {frameworkIcons[f.key] || "📋"}
                 </div>
-              </a>
+                <h3 style={{ marginBottom: "var(--space-2)" }}>{f.short}</h3>
+                <p style={{ fontSize: 14, marginBottom: "var(--space-5)" }}>
+                  {frameworkDescriptions[f.key] || f.name}
+                </p>
+
+                <div className="flex gap-3" style={{ flexWrap: "wrap" }}>
+                  <a
+                    href={`/assessments/new?framework=${f.key}&type=QUICK`}
+                    className="btn btn-primary"
+                    style={{ flex: 1, minWidth: 120 }}
+                  >
+                    Quick Audit
+                    <span style={{ opacity: 0.7, marginLeft: 4, fontSize: 12 }}>15 Fragen</span>
+                  </a>
+                  <a
+                    href={`/assessments/new?framework=${f.key}&type=FULL`}
+                    className="btn btn-secondary"
+                    style={{ flex: 1, minWidth: 120 }}
+                  >
+                    Full Audit
+                    <span style={{ opacity: 0.7, marginLeft: 4, fontSize: 12 }}>Pro</span>
+                  </a>
+                </div>
+              </div>
             ))}
+          </div>
+
+          {/* Comparison Table */}
+          <div className="card mt-8" style={{ maxWidth: 600, margin: "var(--space-10) auto 0" }}>
+            <h4 className="text-center mb-6">Quick vs. Full Audit</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--space-4)", textAlign: "center" }}>
+              <div></div>
+              <div className="text-caption">Quick</div>
+              <div className="text-caption">Full</div>
+
+              <div style={{ textAlign: "left", fontSize: 14 }}>Fragen</div>
+              <div style={{ fontWeight: 600 }}>15</div>
+              <div style={{ fontWeight: 600 }}>50</div>
+
+              <div style={{ textAlign: "left", fontSize: 14 }}>Dauer</div>
+              <div style={{ fontWeight: 600 }}>~5 Min</div>
+              <div style={{ fontWeight: 600 }}>~20 Min</div>
+
+              <div style={{ textAlign: "left", fontSize: 14 }}>Detailtiefe</div>
+              <div style={{ fontWeight: 600 }}>Überblick</div>
+              <div style={{ fontWeight: 600 }}>Umfassend</div>
+
+              <div style={{ textAlign: "left", fontSize: 14 }}>Verfügbar</div>
+              <div style={{ color: "var(--color-success)", fontWeight: 600 }}>Free</div>
+              <div style={{ color: "var(--color-accent)", fontWeight: 600 }}>Pro</div>
+            </div>
           </div>
         </div>
       </section>
@@ -103,7 +142,7 @@ export default function HomePage() {
             <div className="card text-center">
               <div style={{ fontSize: 32, marginBottom: "var(--space-4)" }}>⚡</div>
               <h4>Schnell</h4>
-              <p className="text-small">QuickCheck in unter 10 Minuten abschließen</p>
+              <p className="text-small">Quick Audit in unter 5 Minuten abschließen</p>
             </div>
             <div className="card text-center">
               <div style={{ fontSize: 32, marginBottom: "var(--space-4)" }}>🎯</div>
@@ -122,9 +161,9 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="section">
         <div className="container text-center">
-          <h2>Bereit für Ihren ersten QuickCheck?</h2>
+          <h2>Bereit für Ihren ersten Audit?</h2>
           <p style={{ maxWidth: 480, margin: "var(--space-4) auto var(--space-6)" }}>
-            Kostenlos starten. Keine Kreditkarte erforderlich.
+            Kostenlos starten mit Quick Audit. Keine Kreditkarte erforderlich.
           </p>
           <a href="/register" className="btn btn-primary btn-lg">
             Jetzt registrieren

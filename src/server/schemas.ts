@@ -7,8 +7,12 @@ export const RegisterSchema = z.object({
   company: z.string().min(1).optional()
 });
 
+export const AssessmentTypeSchema = z.enum(["QUICK", "FULL"]);
+export type AssessmentType = z.infer<typeof AssessmentTypeSchema>;
+
 export const AssessmentCreateSchema = z.object({
   frameworkKey: z.enum(["ISO_27001", "ISO_13485", "EU_MDR", "EU_GMP_ANNEX_11"]),
+  type: AssessmentTypeSchema.default("QUICK"),
   answers: z.record(z.boolean())
 });
 
