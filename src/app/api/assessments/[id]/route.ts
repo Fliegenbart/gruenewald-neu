@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+
+export const dynamic = 'force-dynamic';
 import { authOptions } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { AssessmentUpdateSchema } from "@/server/schemas";

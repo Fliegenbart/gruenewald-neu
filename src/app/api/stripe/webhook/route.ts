@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+
+export const dynamic = 'force-dynamic';
 import { stripe } from "@/server/stripe";
 import { env } from "@/server/env";
 import { prisma } from "@/server/db";

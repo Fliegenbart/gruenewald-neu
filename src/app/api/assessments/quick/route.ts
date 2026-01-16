@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
+export const dynamic = 'force-dynamic';
 import { computeScore } from "@/domain/scoring/score";
 import { getQuestions } from "@/domain/frameworks/banks";
 import type { FrameworkKey } from "@/domain/frameworks";
