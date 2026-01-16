@@ -10,6 +10,20 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login"
   },
+  // Explicitly use NEXTAUTH_URL for callbacks
+  ...(process.env.NEXTAUTH_URL && {
+    cookies: {
+      sessionToken: {
+        name: `next-auth.session-token`,
+        options: {
+          httpOnly: true,
+          sameSite: "lax",
+          path: "/",
+          secure: process.env.NEXTAUTH_URL?.startsWith("https://")
+        }
+      }
+    }
+  }),
   providers: [
     CredentialsProvider({
       name: "Credentials",
