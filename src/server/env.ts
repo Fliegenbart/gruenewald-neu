@@ -14,4 +14,14 @@ const EnvSchema = z.object({
   APP_URL: z.string().url()
 });
 
-export const env = EnvSchema.parse(process.env);
+// Lazy initialization - only validate at runtime, not build time
+let _env: z.infer<typeof EnvSchema> | null = null;
+
+export const env = new Proxy({} as z.infer<typeof EnvSchema>, {
+  get(_, prop: string) {
+    if (_env === null) {
+      _env = EnvSchema.parse(process.env);
+    }
+    return _env[prop as keyof z.infer<typeof EnvSchema>];
+  }
+});
