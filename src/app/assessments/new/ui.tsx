@@ -39,7 +39,13 @@ export default function NewAssessmentClient({ frameworkKey, assessmentType, ques
 
     if (!res.ok) {
       // Handle specific error codes
-      if (data.code === "UPGRADE_REQUIRED") {
+      if (res.status === 401) {
+        setMsg({
+          type: "info",
+          text: "Bitte melden Sie sich an, um den Audit zu speichern.",
+          code: "LOGIN_REQUIRED"
+        });
+      } else if (data.code === "UPGRADE_REQUIRED") {
         setMsg({
           type: "info",
           text: "Full Audit erfordert ein Pro-Abo.",
@@ -166,7 +172,16 @@ export default function NewAssessmentClient({ frameworkKey, assessmentType, ques
             }}
           >
             <p>{msg.text}</p>
-            {msg.code && (
+            {msg.code === "LOGIN_REQUIRED" && (
+              <a
+                href="/login"
+                className="btn btn-primary"
+                style={{ marginTop: "var(--space-3)" }}
+              >
+                Jetzt anmelden
+              </a>
+            )}
+            {(msg.code === "UPGRADE_REQUIRED" || msg.code === "QUICK_LIMIT_REACHED") && (
               <a
                 href="/pricing"
                 className="btn btn-primary"
